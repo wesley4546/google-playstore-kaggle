@@ -100,51 +100,18 @@ model_data <-
 
 
 
-dummy <- model.matrix(~ category -1, data = model_data)
+dummy <- as.data.frame(model.matrix(~ category -1 , data = model_data))
+
+df <- cbind(model_data, dummy) %>% select(-c(category)) %>% na.omit()
 
 
+split <- sample.split(df$rating, SplitRatio = .7)
+
+train_play <- subset(df, split == TRUE)
+test_play <- subset(df, split == FALSE)
 
 
-
-# model_data <-
-#   model_data %>%
-#   mutate(art_and_design = ifelse(category == "ART_AND_DESIGN", 1,0))
-
-
-category_values <- unique(model_data$category)
- 
-category_names <- model_data$category
-model_data<-
-  model_data %>%
-  mutate_at(., ifelse(category == category_values,1,0))
-
-category_valcount = length(category_values)
-
-xy <- model_data
-xy[10:42] <- sapply(0, "*", xy[[2]])
-
-colnames(xy)[10:42] <- category_values #warning number of items to replace is not a multiple of replacement length
-
-xy[10:42] <- t(sapply(xy$category, function(x){
-  as.numeric(grepl(x, colnames(xy[10:42])))
-}))
-
-test<- 
-  xy %>% 
-  select(-c(category))
-
-
-
-
-
-
-split <- sample.split(test$rating, SplitRatio = .7)
-
-train_play <- subset(test, split == TRUE)
-test_play <- subset(test, split == FALSE)
-
-
-ksvm_model <- ksvm(genres ~ ., data = train_play)
+ksvm_model <- ksvm(rating ~ ., data = train_play)
 
 ksvm_predict <- predict(ksvm_model, test_play)
 
